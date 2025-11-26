@@ -285,13 +285,13 @@ def web_page():
     <form action="/" method="get">
     <input type="hidden" name="mode" value="INDIVIDUAL">
     <div class="led-label">LED 1: <span id="val0">""" + str(individual_brightness[0]) + """</span>%</div>
-    <input type="range" name="led0" min="0" max="100" value=\"""" + str(individual_brightness[0]) + """\" class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
+    <input type="range" name="led0" min="0" max="100" value='""" + str(individual_brightness[0]) + """' class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
     <div class="led-label">LED 2: <span id="val1">""" + str(individual_brightness[1]) + """</span>%</div>
-    <input type="range" name="led1" min="0" max="100" value=\"""" + str(individual_brightness[1]) + """\" class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
+    <input type="range" name="led1" min="0" max="100" value='""" + str(individual_brightness[1]) + """' class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
     <div class="led-label">LED 3: <span id="val2">""" + str(individual_brightness[2]) + """</span>%</div>
-    <input type="range" name="led2" min="0" max="100" value=\"""" + str(individual_brightness[2]) + """\" class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
+    <input type="range" name="led2" min="0" max="100" value='""" + str(individual_brightness[2]) + """' class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
     <div class="led-label">LED 4: <span id="val3">""" + str(individual_brightness[3]) + """</span>%</div>
-    <input type="range" name="led3" min="0" max="100" value=\"""" + str(individual_brightness[3]) + """\" class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
+    <input type="range" name="led3" min="0" max="100" value='""" + str(individual_brightness[3]) + """' class="slider" oninput="this.previousElementSibling.querySelector('span').innerText=this.value"><br>
     <button type="submit" class="ind" style="margin-top:15px;">Apply</button>
     </form>
     </div>
