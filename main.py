@@ -305,11 +305,20 @@ def parse_query_param(request, param):
         if start == -1:
             return None
         start += len(param) + 1
+
+        # Find the end of the value - look for &, space, or line endings
         end = request.find('&', start)
         if end == -1:
             end = request.find(' ', start)
+        if end == -1:
+            end = request.find('\r', start)
+        if end == -1:
+            end = request.find('\n', start)
+        if end == -1:
+            end = len(request)
+
         value = request[start:end]
-        return value
+        return value.strip()
     except:
         return None
 
@@ -325,7 +334,7 @@ def start_server():
         try:
             cl, addr = s.accept()
             request = cl.recv(1024)
-            request = str(request)
+            request = request.decode('utf-8')
 
             # Parse the URL (Very basic parsing)
             if 'mode=ON' in request:
