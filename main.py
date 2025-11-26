@@ -5,9 +5,10 @@ Controls 4 LED noodles with PWM dimming and fade effects
 FEATURES:
 - Individual LED control with brightness (0-100%)
 - Smooth fade transitions for each LED
-- Multiple display modes (ON, OFF, BLINK, PULSE, WAVE, CHASE, INDIVIDUAL)
+- Multiple display modes (ON, OFF, BLINK, PULSE, WAVE, CHASE, WARP, INDIVIDUAL)
 - Web interface for remote control
 - Loop-friendly LED control interface
+- Star Trek TNG Warp Engine effect
 
 USAGE EXAMPLES:
 
@@ -52,7 +53,7 @@ for n in noodles:
     n.freq(1000)
 
 # Global Variable to control state (Shared between Web and Lights)
-# Modes: "OFF", "ON", "BLINK", "PULSE", "WAVE", "CHASE", "INDIVIDUAL"
+# Modes: "OFF", "ON", "BLINK", "PULSE", "WAVE", "CHASE", "WARP", "INDIVIDUAL"
 current_mode = "OFF"
 
 # Individual LED brightness values (0-100) for INDIVIDUAL mode
@@ -238,6 +239,37 @@ def run_light_show():
             if current_mode == "CHASE":
                 fade_led(3, 0, duration=0.3, steps=15)
 
+        elif current_mode == "WARP":
+            # Star Trek TNG Warp Engine effect
+            # Phase 1: Warp engage sequence - power ramping up
+            for intensity in range(20, 101, 10):
+                if current_mode != "WARP": break
+                # All nacelles (LEDs) pulse together
+                for b in range(0, intensity, 5):
+                    if current_mode != "WARP": break
+                    set_all(b)
+                    time.sleep(0.015)
+                for b in range(intensity, -1, -5):
+                    if current_mode != "WARP": break
+                    set_all(b)
+                    time.sleep(0.015)
+
+            # Phase 2: Steady warp cruise - fast rhythmic pulse
+            while current_mode == "WARP":
+                # Pulse all nacelles in sync (like both warp nacelles)
+                for b in range(30, 101, 7):
+                    if current_mode != "WARP": break
+                    set_all(b)
+                    time.sleep(0.008)
+                for b in range(100, 29, -7):
+                    if current_mode != "WARP": break
+                    set_all(b)
+                    time.sleep(0.008)
+
+                # Brief hold at low power
+                if current_mode == "WARP":
+                    time.sleep(0.05)
+
         elif current_mode == "INDIVIDUAL":
             # Individual control mode - set each LED to its individual brightness
             for i in range(4):
@@ -278,6 +310,7 @@ def web_page():
     <a href="/?mode=PULSE"><button class="eff">PULSE</button></a><br>
     <a href="/?mode=WAVE"><button class="eff">WAVE</button></a>
     <a href="/?mode=CHASE"><button class="eff">CHASE</button></a><br>
+    <a href="/?mode=WARP"><button class="eff" style="background:#9C27B0;">WARP ENGINE</button></a><br>
     <a href="/?mode=INDIVIDUAL"><button class="ind">INDIVIDUAL</button></a>
     </div>
     <div class="led-control">
@@ -349,6 +382,8 @@ def start_server():
                 current_mode = "WAVE"
             elif 'mode=CHASE' in request:
                 current_mode = "CHASE"
+            elif 'mode=WARP' in request:
+                current_mode = "WARP"
             elif 'mode=INDIVIDUAL' in request:
                 current_mode = "INDIVIDUAL"
                 # Parse individual LED brightness values
