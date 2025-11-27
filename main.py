@@ -45,6 +45,19 @@ import socket
 import _thread
 import time
 
+# Import WiFi configuration
+try:
+    from wifi_config import WIFI_SSID, WIFI_PASSWORD, WIFI_RETRY_INTERVAL, WIFI_CONNECT_TIMEOUT
+    wifi_configured = True
+except ImportError:
+    print("WARNING: wifi_config.py not found. WiFi will not be configured.")
+    print("Copy wifi_config.example.py to wifi_config.py and add your credentials.")
+    wifi_configured = False
+    WIFI_SSID = ""
+    WIFI_PASSWORD = ""
+    WIFI_RETRY_INTERVAL = 30
+    WIFI_CONNECT_TIMEOUT = 10
+
 
 # Pins
 pins = [16, 17, 19, 18] 
@@ -179,10 +192,36 @@ class LEDLoop:
 # --- LIGHT SHOW LOGIC (Thread 1) ---
 
 def run_light_show():
-    global current_mode, individual_brightness
+    global current_mode, individual_brightness, wifi_connected, wlan
     print("Light thread started.")
 
+    # WiFi monitoring variables
+    last_wifi_check = time.time()
+
     while True:
+        # Periodic WiFi connection check (integrated into light show thread)
+        current_time = time.time()
+        if wifi_configured and (current_time - last_wifi_check) >= WIFI_RETRY_INTERVAL:
+            last_wifi_check = current_time
+            # Check if still connected
+            if wlan and wlan.isconnected():
+                if not wifi_connected:
+                    wifi_connected = True
+                    status = wlan.ifconfig()
+                    print(f"WiFi reconnected! IP: {status[0]}")
+                    # Flash all LEDs to indicate reconnection
+                    for _ in range(2):
+                        set_all(100)
+                        time.sleep(0.1)
+                        set_all(0)
+                        time.sleep(0.1)
+            else:
+                if wifi_connected:
+                    print("WiFi connection lost. Attempting to reconnect...")
+                    wifi_connected = False
+                connect_wifi()
+
+        # Light show logic
         if current_mode == "OFF":
             all_off()
             time.sleep(0.2)
@@ -276,7 +315,66 @@ def run_light_show():
                 set_brightness(i, individual_brightness[i])
             time.sleep(0.1)
 
-# --- WIFI & WEB SERVER (Thread 2) ---
+# --- WIFI CONNECTION MANAGEMENT ---
+
+# Global WiFi status
+wlan = None
+wifi_connected = False
+
+def connect_wifi():
+    """
+    Attempt to connect to WiFi network.
+    Returns True if connected, False otherwise.
+    Uses LED noodle 0 to indicate connection status.
+    """
+    global wlan, wifi_connected
+
+    if not wifi_configured:
+        return False
+
+    if wlan is None:
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+
+    # Check if already connected
+    if wlan.isconnected():
+        wifi_connected = True
+        return True
+
+    print(f"Connecting to WiFi network: {WIFI_SSID}")
+    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+
+    # Wait for connection with timeout, flashing LED 0 while connecting
+    max_wait = WIFI_CONNECT_TIMEOUT
+    led_state = False
+    while max_wait > 0:
+        # Flash LED 0 to indicate connection attempt
+        set_brightness(0, 100 if led_state else 0)
+        led_state = not led_state
+
+        if wlan.isconnected():
+            wifi_connected = True
+            status = wlan.ifconfig()
+            print(f"WiFi connected! IP: {status[0]}")
+
+            # Flash all LEDs to indicate successful connection
+            for _ in range(3):
+                set_all(100)
+                time.sleep(0.15)
+                set_all(0)
+                time.sleep(0.15)
+
+            return True
+        max_wait -= 1
+        time.sleep(1)
+
+    # Connection failed - turn off LED 0
+    set_brightness(0, 0)
+    wifi_connected = False
+    print("WiFi connection failed")
+    return False
+
+# --- WIFI & WEB SERVER ---
 
 
 def web_page():
@@ -408,8 +506,16 @@ def start_server():
 
 # --- MAIN EXECUTION ---
 
+# Initial WiFi connection attempt
+print("Starting LED Noodle Controller...")
+if wifi_configured:
+    print("Attempting initial WiFi connection...")
+    connect_wifi()
+else:
+    print("WiFi not configured. Web server will not be accessible.")
+    print("To enable WiFi: copy wifi_config.example.py to wifi_config.py and add credentials.")
 
-# Start the Light Show in a separate thread
+# Start the Light Show in a separate thread (includes WiFi monitoring)
 _thread.start_new_thread(run_light_show, ())
 
 # Start the Web Server in the main thread

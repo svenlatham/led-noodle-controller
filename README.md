@@ -92,6 +92,33 @@ with LEDLoop(delay=0.2) as loop:
 ## Installation
 
 1. Upload `main.py` to your Pico 2 W
-2. Configure WiFi credentials if needed
-3. Run the script - it will start the web server automatically
-4. Access the web interface to control your LEDs
+2. Configure WiFi credentials:
+   - Copy `wifi_config.example.py` to `wifi_config.py`
+   - Edit `wifi_config.py` and add your WiFi network name and password
+   - Optionally adjust retry interval and timeout settings
+3. Upload `wifi_config.py` to your Pico 2 W
+4. Run the script - it will automatically:
+   - Connect to your WiFi network
+   - Monitor the connection and retry every 30 seconds if disconnected
+   - Start the web server
+5. Find your Pico's IP address in the console output
+6. Access the web interface at `http://<pico-ip-address>` to control your LEDs
+
+## WiFi Configuration
+
+The WiFi credentials are stored in `wifi_config.py`, which is not tracked by git for security. This file contains:
+
+- `WIFI_SSID`: Your WiFi network name
+- `WIFI_PASSWORD`: Your WiFi password
+- `WIFI_RETRY_INTERVAL`: Seconds between reconnection attempts (default: 30)
+- `WIFI_CONNECT_TIMEOUT`: Seconds to wait for initial connection (default: 10)
+
+The controller will automatically attempt to reconnect if the WiFi connection is lost, checking every `WIFI_RETRY_INTERVAL` seconds.
+
+### WiFi Status LED Indicators
+
+The LEDs provide visual feedback for WiFi connection status:
+- **Connecting**: LED noodle 0 flashes on/off while attempting to connect
+- **Connected**: All 4 LED noodles flash together 3 times to indicate successful connection
+- **Reconnected**: All 4 LED noodles flash together 2 times when reconnection succeeds
+- **Failed**: LED noodle 0 turns off if connection fails
