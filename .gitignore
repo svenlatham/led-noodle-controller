@@ -1,0 +1,17 @@
+# WiFi configuration (contains sensitive credentials)
+wifi_config.py
+
+# MicroPython compiled files
+*.pyc
+*.mpy
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -45,6 +45,19 @@ import socket
 import _thread
 import time
 
+# Import WiFi configuration
+try:
+    from wifi_config import WIFI_SSID, WIFI_PASSWORD, WIFI_RETRY_INTERVAL, WIFI_CONNECT_TIMEOUT
+    wifi_configured = True
+except ImportError:
+    print("WARNING: wifi_config.py not found. WiFi will not be configured.")
+    print("Copy wifi_config.example.py to wifi_config.py and add your credentials.")
+    wifi_configured = False
+    WIFI_SSID = ""
+    WIFI_PASSWORD = ""
+    WIFI_RETRY_INTERVAL = 30
+    WIFI_CONNECT_TIMEOUT = 10
+
 
 # Pins
 pins = [16, 17, 19, 18] 
@@ -276,6 +289,80 @@ def run_light_show():
                 set_brightness(i, individual_brightness[i])
             time.sleep(0.1)
 
+# --- WIFI CONNECTION MANAGEMENT ---
+
+# Global WiFi status
+wlan = None
+wifi_connected = False
+
+def connect_wifi():
+    """
+    Attempt to connect to WiFi network.
+    Returns True if connected, False otherwise.
+    """
+    global wlan, wifi_connected
+
+    if not wifi_configured:
+        return False
+
+    if wlan is None:
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+
+    # Check if already connected
+    if wlan.isconnected():
+        wifi_connected = True
+        return True
+
+    print(f"Connecting to WiFi network: {WIFI_SSID}")
+    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+
+    # Wait for connection with timeout
+    max_wait = WIFI_CONNECT_TIMEOUT
+    while max_wait > 0:
+        if wlan.isconnected():
+            wifi_connected = True
+            status = wlan.ifconfig()
+            print(f"WiFi connected! IP: {status[0]}")
+            return True
+        max_wait -= 1
+        time.sleep(1)
+
+    wifi_connected = False
+    print("WiFi connection failed")
+    return False
+
+def wifi_monitor():
+    """
+    Periodically check WiFi connection and attempt to reconnect if disconnected.
+    Runs in a separate thread.
+    """
+    global wifi_connected
+
+    print("WiFi monitor thread started.")
+
+    if not wifi_configured:
+        print("WiFi not configured. Skipping WiFi monitoring.")
+        return
+
+    # Initial connection attempt
+    connect_wifi()
+
+    while True:
+        time.sleep(WIFI_RETRY_INTERVAL)
+
+        # Check if still connected
+        if wlan and wlan.isconnected():
+            if not wifi_connected:
+                wifi_connected = True
+                status = wlan.ifconfig()
+                print(f"WiFi reconnected! IP: {status[0]}")
+        else:
+            if wifi_connected:
+                print("WiFi connection lost. Attempting to reconnect...")
+                wifi_connected = False
+            connect_wifi()
+
 # --- WIFI & WEB SERVER (Thread 2) ---
 
 
@@ -411,6 +498,9 @@ def start_server():
 
 # Start the Light Show in a separate thread
 _thread.start_new_thread(run_light_show, ())
+
+# Start the WiFi Monitor in a separate thread
+_thread.start_new_thread(wifi_monitor, ())
 
 # Start the Web Server in the main thread
 start_server()
