@@ -114,3 +114,11 @@ The WiFi credentials are stored in `wifi_config.py`, which is not tracked by git
 - `WIFI_CONNECT_TIMEOUT`: Seconds to wait for initial connection (default: 10)
 
 The controller will automatically attempt to reconnect if the WiFi connection is lost, checking every `WIFI_RETRY_INTERVAL` seconds.
+
+### WiFi Status LED Indicators
+
+The LEDs provide visual feedback for WiFi connection status:
+- **Connecting**: LED noodle 0 flashes on/off while attempting to connect
+- **Connected**: All 4 LED noodles flash together 3 times to indicate successful connection
+- **Reconnected**: All 4 LED noodles flash together 2 times when reconnection succeeds
+- **Failed**: LED noodle 0 turns off if connection fails

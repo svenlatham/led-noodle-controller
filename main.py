@@ -209,6 +209,12 @@ def run_light_show():
                     wifi_connected = True
                     status = wlan.ifconfig()
                     print(f"WiFi reconnected! IP: {status[0]}")
+                    # Flash all LEDs to indicate reconnection
+                    for _ in range(2):
+                        set_all(100)
+                        time.sleep(0.1)
+                        set_all(0)
+                        time.sleep(0.1)
             else:
                 if wifi_connected:
                     print("WiFi connection lost. Attempting to reconnect...")
@@ -319,6 +325,7 @@ def connect_wifi():
     """
     Attempt to connect to WiFi network.
     Returns True if connected, False otherwise.
+    Uses LED noodle 0 to indicate connection status.
     """
     global wlan, wifi_connected
 
@@ -337,17 +344,32 @@ def connect_wifi():
     print(f"Connecting to WiFi network: {WIFI_SSID}")
     wlan.connect(WIFI_SSID, WIFI_PASSWORD)
 
-    # Wait for connection with timeout
+    # Wait for connection with timeout, flashing LED 0 while connecting
     max_wait = WIFI_CONNECT_TIMEOUT
+    led_state = False
     while max_wait > 0:
+        # Flash LED 0 to indicate connection attempt
+        set_brightness(0, 100 if led_state else 0)
+        led_state = not led_state
+
         if wlan.isconnected():
             wifi_connected = True
             status = wlan.ifconfig()
             print(f"WiFi connected! IP: {status[0]}")
+
+            # Flash all LEDs to indicate successful connection
+            for _ in range(3):
+                set_all(100)
+                time.sleep(0.15)
+                set_all(0)
+                time.sleep(0.15)
+
             return True
         max_wait -= 1
         time.sleep(1)
 
+    # Connection failed - turn off LED 0
+    set_brightness(0, 0)
     wifi_connected = False
     print("WiFi connection failed")
     return False
