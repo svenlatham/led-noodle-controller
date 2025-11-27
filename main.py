@@ -192,10 +192,30 @@ class LEDLoop:
 # --- LIGHT SHOW LOGIC (Thread 1) ---
 
 def run_light_show():
-    global current_mode, individual_brightness
+    global current_mode, individual_brightness, wifi_connected, wlan
     print("Light thread started.")
 
+    # WiFi monitoring variables
+    last_wifi_check = time.time()
+
     while True:
+        # Periodic WiFi connection check (integrated into light show thread)
+        current_time = time.time()
+        if wifi_configured and (current_time - last_wifi_check) >= WIFI_RETRY_INTERVAL:
+            last_wifi_check = current_time
+            # Check if still connected
+            if wlan and wlan.isconnected():
+                if not wifi_connected:
+                    wifi_connected = True
+                    status = wlan.ifconfig()
+                    print(f"WiFi reconnected! IP: {status[0]}")
+            else:
+                if wifi_connected:
+                    print("WiFi connection lost. Attempting to reconnect...")
+                    wifi_connected = False
+                connect_wifi()
+
+        # Light show logic
         if current_mode == "OFF":
             all_off()
             time.sleep(0.2)
@@ -332,38 +352,7 @@ def connect_wifi():
     print("WiFi connection failed")
     return False
 
-def wifi_monitor():
-    """
-    Periodically check WiFi connection and attempt to reconnect if disconnected.
-    Runs in a separate thread.
-    """
-    global wifi_connected
-
-    print("WiFi monitor thread started.")
-
-    if not wifi_configured:
-        print("WiFi not configured. Skipping WiFi monitoring.")
-        return
-
-    # Initial connection attempt
-    connect_wifi()
-
-    while True:
-        time.sleep(WIFI_RETRY_INTERVAL)
-
-        # Check if still connected
-        if wlan and wlan.isconnected():
-            if not wifi_connected:
-                wifi_connected = True
-                status = wlan.ifconfig()
-                print(f"WiFi reconnected! IP: {status[0]}")
-        else:
-            if wifi_connected:
-                print("WiFi connection lost. Attempting to reconnect...")
-                wifi_connected = False
-            connect_wifi()
-
-# --- WIFI & WEB SERVER (Thread 2) ---
+# --- WIFI & WEB SERVER ---
 
 
 def web_page():
@@ -495,12 +484,17 @@ def start_server():
 
 # --- MAIN EXECUTION ---
 
+# Initial WiFi connection attempt
+print("Starting LED Noodle Controller...")
+if wifi_configured:
+    print("Attempting initial WiFi connection...")
+    connect_wifi()
+else:
+    print("WiFi not configured. Web server will not be accessible.")
+    print("To enable WiFi: copy wifi_config.example.py to wifi_config.py and add credentials.")
 
-# Start the Light Show in a separate thread
+# Start the Light Show in a separate thread (includes WiFi monitoring)
 _thread.start_new_thread(run_light_show, ())
-
-# Start the WiFi Monitor in a separate thread
-_thread.start_new_thread(wifi_monitor, ())
 
 # Start the Web Server in the main thread
 start_server()
