@@ -16,6 +16,7 @@ Advanced Raspberry Pi Pico 2 W controller for 4 LED noodles with individual cont
 - **PULSE** - Smooth breathing effect on all LEDs
 - **WAVE** - Wave effect with individual LED fades
 - **CHASE** - Chasing pattern with overlapping fades
+- **WARP ENGINE** - Star Trek TNG warp nacelle effect with power-up sequence and steady pulse
 - **INDIVIDUAL** - Manual control of each LED via web interface
 
 ### LED Control API
